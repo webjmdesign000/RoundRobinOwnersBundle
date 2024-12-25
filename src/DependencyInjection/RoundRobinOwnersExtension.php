@@ -15,6 +15,6 @@ class RoundRobinOwnersExtension extends PluginExtension
         // Load services configuration
         $this->initialize($container, $configs);
         $loader = $this->getResolver($container);
-        $loader->load('services.yaml');
+        $loader->load('services.php');
     }
 }
