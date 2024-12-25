@@ -3,39 +3,31 @@
 namespace MauticPlugin\RoundRobinOwnersBundle\Model\Action;
 
 use Mautic\CampaignBundle\Model\Action\AbstractAction;
-use Mautic\CampaignBundle\Event\CampaignExecutionEvent;
-use Mautic\CoreBundle\Helper\DateTimeHelper;
 use Mautic\UserBundle\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
-use Psr\Log\LoggerInterface;
-use Mautic\EmailBundle\Model\EmailModel;
-use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class AssignRoundRobinOwnerAction extends AbstractAction
 {
     protected $logger;
     protected $userRepository;
     protected $entityManager;
-    protected $emailModel;
-    protected $mailer;
+    protected $container;
 
     public function __construct(
         $dispatcher,
         $config,
         $translator,
-        LoggerInterface $logger,
+        $logger,
         $userRepository,
         EntityManagerInterface $entityManager,
-        EmailModel $emailModel,
-        MailerInterface $mailer
+        ContainerInterface $container
     ) {
         parent::__construct($dispatcher, $config, $translator);
         $this->logger = $logger;
         $this->userRepository = $userRepository;
         $this->entityManager = $entityManager;
-        $this->emailModel = $emailModel;
-        $this->mailer = $mailer;
+        $this->container = $container;
     }
 
     public function getName()
@@ -45,12 +37,12 @@ class AssignRoundRobinOwnerAction extends AbstractAction
 
     public function getLabel()
     {
-        return $this->translator->trans('round_robin_owner.label', [], 'plugins');
+        return 'Round Robin Owners';
     }
 
     public function getDescription()
     {
-        return $this->translator->trans('round_robin_owner.description', [], 'plugins');
+        return 'Assigns a contact to an owner in a round-robin fashion and optionally sends an email to the owner.';
     }
 
     public function getFormOptions()
@@ -79,7 +71,7 @@ class AssignRoundRobinOwnerAction extends AbstractAction
         ];
     }
 
-    public function execute($object, $args, CampaignExecutionEvent $event)
+    public function execute($object, $args, $event)
     {
         // Retrieve owners from args
         $ownerIds = isset($args['owners']) ? $args['owners'] : [];
@@ -118,10 +110,10 @@ class AssignRoundRobinOwnerAction extends AbstractAction
         return true;
     }
 
-    private function getCurrentOwnerIndex(int $totalOwners): int
+    private function getCurrentOwnerIndex($totalOwners)
     {
         // Using cache directory
-        $cacheDir = $this->config['cache_dir'] ?? sys_get_temp_dir();
+        $cacheDir = $this->container->getParameter('kernel.cache_dir');
         $filePath = $cacheDir . '/round_robin_owner_index.txt';
 
         if (file_exists($filePath)) {
@@ -133,9 +125,9 @@ class AssignRoundRobinOwnerAction extends AbstractAction
         return $index % $totalOwners;
     }
 
-    private function incrementOwnerIndex(): void
+    private function incrementOwnerIndex()
     {
-        $cacheDir = $this->config['cache_dir'] ?? sys_get_temp_dir();
+        $cacheDir = $this->container->getParameter('kernel.cache_dir');
         $filePath = $cacheDir . '/round_robin_owner_index.txt';
 
         if (file_exists($filePath)) {
@@ -147,31 +139,23 @@ class AssignRoundRobinOwnerAction extends AbstractAction
         file_put_contents($filePath, $index);
     }
 
-    private function sendEmailToOwner(User $owner, $contact): void
+    private function sendEmailToOwner(User $owner, $contact)
     {
-        // Ensure you have an email template with the alias 'owner-assignment' created and published
-        $emailAlias = 'owner-assignment';
+        // Implement email sending logic using Mautic’s email service
+        $emailAlias = 'owner-assignment'; // Ensure this alias exists in your Mautic Emails
 
-        $email = $this->emailModel->getRepository()->findOneBy(['isPublished' => 1, 'alias' => $emailAlias]);
+        $emailModel = $this->container->get('mautic.email.model.email');
+        $email = $emailModel->getRepository()->findOneBy(['isPublished' => 1, 'alias' => $emailAlias]);
 
         if (!$email) {
             $this->logger->error('No published email with alias "owner-assignment" found.');
             return;
         }
 
-        // Create the email message
-        $message = (new Email())
-            ->from($email->getFrom())
-            ->to($owner->getEmail())
-            ->subject($email->getSubject())
-            ->html($email->getBody());
+        // Prepare recipient
+        $recipient = [$owner->getEmail() => $owner->getUsername()];
 
         // Send the email
-        try {
-            $this->mailer->send($message);
-            $this->logger->info('Assignment email sent to owner: ' . $owner->getEmail());
-        } catch (\Exception $e) {
-            $this->logger->error('Failed to send email to owner: ' . $e->getMessage());
-        }
+        $emailModel->sendMessage($email, $recipient, $contact);
     }
 }
