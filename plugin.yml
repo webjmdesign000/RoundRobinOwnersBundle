@@ -1,0 +1,12 @@
+name: Round Robin Owners Bundle
+description: Assigns contacts to multiple owners in a round-robin fashion within campaigns.
+version: 1.0.0
+author: Your Name
+author_url: https://deertechnology.org
+services:
+  # Services are defined in src/DependencyInjection/RoundRobinOwnersExtension.php
+routes: []
+menu: []
+icon: "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='currentColor' class='bi bi-people' viewBox='0 0 16 16'>
+  <path d='M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.063.39-1.02 4-1.02s3.998.957 4 1.02a.261.261 0 0 1-.014.055C13.542 14.042 12.564 14 8 14s-5.543.042-5.986-.969a.261.261 0 0 1-.014-.055zM8 7a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm5-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM4.5 4a2 2 0 1 1-4 0 2 2 0 0 1 4 0z'/>
+</svg>"
