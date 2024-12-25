@@ -1,8 +1,8 @@
 name: Round Robin Owners Bundle
 description: Assigns contacts to multiple owners in a round-robin fashion within campaigns.
 version: 1.0.0
-author: Your Name
-author_url: https://yourwebsite.com
+author: WebjmDesign000
+author_url: https://deertechnology.org
 services:
   # Services are defined in src/DependencyInjection/RoundRobinOwnersExtension.php
 routes: []
